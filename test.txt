@@ -1,0 +1,77 @@
+package java8_lambda.stream;
+
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Random;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
+/**
+ * 4.1 Stream概述
+ * Stream API是Lambda表达式的具体应用
+ * IO流中的Stream可以理解为字节序列或者字符序列，
+ * StAX中的Stream可以理解为XML文档元素的序列，
+ * 而这里的Stream指的是一组元素的序列，这一组元素可以来源于数组，集合或者是IO channel。
+ * 
+ * Stream API是原先集合Iterator的高级版本
+ * 	常规的串行式集合迭代与处理外，也提供了并行式的集合迭代与处理
+ * 
+ * stream()方法外
+ * 	串行式处理就是在一个线程内将元素从头到尾依次迭代处理
+ * parallelStream()方法
+ * 	并行式处理是指将一组元素分割成多个数据段，每个数据段单独启用一个线程，
+ * 		各线程彼此独立同时运行，从而充分利用现代处理器多核多线程的特点，提高系统性能。
+ * 	
+ * @author Administrator
+ *
+ */
+public class Fist {
+	public static void main(String[] args) {
+		test1();
+	}
+	public static void test1(){
+		Stream<Integer> stream=Stream.of(1,2,3,4,5);
+		//stream.forEach((s)->{System.out.println(s);});
+		stream.forEach(s->System.out.println(s));
+		//注意必须添加limit()方法限制产生的元素的个数，否则会产生无穷序列
+		Stream<Integer> stream2=Stream.generate(()->{
+			return new Random().nextInt(5);
+		}).limit(5);
+		stream2.forEach((s)->{System.out.println(s);});
+		
+		//iterate方法中，第一个参数是种子，即最终产生的序列中的第一个元素，第二个元素是由后面的
+		//Lambda表达式计算而来的，这里是由前一个元素加1产生后一个元素
+		Stream<Integer> stream3=Stream.iterate(1,item->item+1).limit(5);
+		stream3.forEach((s)->{System.out.println(s);});
+		
+		int[] a=new int[]{1,2,3,4,5};
+		//IntStream是Stream针对int或者Interger元素类型的特定Stream类型，跟Stream处在相同
+		//的类级别位置，都是BaseStream的子类。同样的还有LongStream和DoubleStream。
+		IntStream stream4=Arrays.stream(a);
+		stream4.forEach((s)->{System.out.println(s);});
+		
+		IntStream stream5=IntStream.range(1, 5);
+		stream5.forEach((s)->{System.out.println(s);});
+		
+		List<Integer> b=Arrays.asList(1,2,3,4,5);
+		Stream<Integer> stream6=b.stream();
+		stream6.forEach((s)->{System.out.println(s);});
+		
+		try {
+			File file = new File("test.txt");
+			System.out.println(file.getAbsolutePath());
+			BufferedReader reader=new BufferedReader(new FileReader(file));
+		    //返回的序列中Stream代表文本中一行字符串
+			Stream<String> stream7=reader.lines();
+		    stream7.forEach(s->System.out.println(s));
+		} catch (FileNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+	}
+
+}

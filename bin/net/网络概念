@@ -1,0 +1,77 @@
+计算机网络的组成：网络节点（终端，传输媒介，协调器（路由），服务器）传输协议组成，解析处理协议的软件
+			使得：相互共享资源方式而连接起来的，且各自具有独立功能的计算机系统的集合
+功能			
+	数据通信
+	资源共享
+	提高可靠性（均衡负荷与分布式处理）
+	综合信息服务（WW、ISDN）
+分类			
+	按传输距离划分
+	广域网(WAN-Wide area network)
+	局域网(LAN-Local area network)
+	城域网(MAN-Metropolitan area network)
+	按通信介质划分
+	有线网
+	无线网
+			
+协议的内容
+	语法——包括数据格式和信息的规定
+	语义——包括协调的控制信息和差错信息
+	规则——包括时序控制、速率匹配和定序
+协议的分层   同层间可以通信，上一层可以调用下一层
+	应用层  ：远程登录协议（Telnet)、文件传输协议（FTP）、超文件本传输协议（HTTP）、域名服务（DNS）、简单邮件传输协议（SMTP）、邮局协议（POP3）等
+	
+	（ 表示，会话，
+	传输：包括ip协议，TCP：面向连接的可靠的传输协议，UDP：是无连接的，不可靠的传输协议
+			IP：把包从一个IP地址送到另一个IP地址,主要解决路由的问题。不可靠。
+			UDP：把报文从一个IP+port送到另一个IP+port,主要解决的问题是，区分了端口，就是socket。无连接，不可靠，高效率
+			TCP：把报文从一个IP＋port送到另一个 IP＋port,主要解决的问题是可靠性问题，有连接。可靠。
+			
+	
+	网络层：网际协议（IP）、Internet互联网控制报文协议（ICMP）、Internet管理协议（IGMP）
+		ip格式 32位的二进制8位一组2字节
+		第一个字节分5类   A  0.0.0.0 到127.255.255.255       a类第一个8位位组表示网络地址。剩下的3个8位位组表示主机地址。第一个二进制的表示是0，每一个A类地址能支持16777214个不同的主机地址
+					B  128.0.0.0 到191.255.255.255     b类两个8位位组表示网络号，另外两个8位位组表示主机号,第1个8位位组的前两位总置为10，B类网络仅有16382个 2的16次方减2
+					C  192.0.0.0 到223.255.255.255     C类3个8位位组表示网络号，1个8位位组表示主机号地址，第一个二进制前3位数为110， 支持254个不同的主机地址
+					D  192.0.0.0 到223.255.255.255	  D类地址用于在IP网络中的组播( multicasting ，又称为多目广播)。D类地址的前4位恒为1110(224-239)
+					E  240.0.0.0 至255.255.255.255		E 类地址保留作研究之用范围是240.0.0.0 至255.255.255.255
+		主机地址的个数是由2的n次方再减去2得到的。减2是必要因为IP把全0保留为表示网络而全1表示网络内的广播地址											
+		每一个IP地址包括两部分：网络地址和主机地址，上面五类地址对所支持的网络数和主机数有不同的组合		
+		
+			子网掩码：限定ip类型和搜索范围
+				A类的默认子网掩码 255.0.0.0 一个子网最多可以容纳1677万多台电脑
+				B类的默认子网掩码 255.255.0.0 一个子网最多可以容纳6万台电脑	
+				C类的默认子网掩码 255.255.255.0 一个子网最多可以容纳254台电脑		
+	数据链路层-
+	物理层
+	
+面向连接与无连接的服务
+	面向连接的服务：文件传输
+	无连接的服务：电子邮件
+java中相关类
+	面向IP层的类：
+	InetAddress：用于标识网络上的硬件资源，无构造  三个静态方法getByName(String host)，getLocalHost() ，getAllByName(String host)
+	面向应用层的类：
+	URL、URLConnection
+		URL：Internet上某一资源的地址：HTML文件、图象文件、声音文件、动画文件以及其他任何内容也可是是一个对数据库的查询
+		public String getProtocol()：获取该URL的协议名
+		public String getHost() ：获取该URL的主机名
+		public String getPort() ：获取该URL的端口号
+		public String getPath() ：获取该URL的文件路径
+		public String getFile() ：获取该URL的文件名
+		public String getRef() ：获取该URL在文件中的相对位置
+		public String getQuery() ：获取该URL的查询名
+		public final InputStream  openStream()，建立连接并读取URL对象所指定的资源。
+	面向网络层的类：
+	TCP协议相关类：
+	Socket、ServerSocket
+		ServerSocket类的accept方法使服务器处于阻塞状态，等待用户请求。等监听到客户端时建立连接并且返回Socket
+		客户端建立连接时得到Socket实列表示连接  这个连接和服务端对于的连接可以说一样的
+		一旦建立了连接，双方对等通信，没有服务器与客户端的区别
+		
+	UDP协议相关类：
+	DatagramPacket、DatagramSocket、MulticastSocket
+	可能产生的例外：
+	BindException、ConnectException、MalformedURLException、NoRouteToHostException、ProtocolException、SocketException、UnknownHostException、UnknownServiceException
+		
+			

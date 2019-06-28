@@ -1,0 +1,28 @@
+classLoader
+	装载流程--	加载   取得类的2进制流 转为方法区的数据结构  在java堆中生成对应的java.lang.Class对象
+			链接-验证：class流的格式验证（文件格式，版本号，元数据-父类，是否继承final类，抽象类抽象方法是否继承，字节码验证-区部变量和参数的吻合，跳转指令是目的地是否存在，符合应用的验证，跳转权限）
+			链接-准备：分配内存（类的初始值的设定-方法区，注只有类在初始化时才会赋予初始值，static final的在准备阶段就给与赋值）
+			连接-解析：将符号引用替换为直接引用-指针或者地址偏移量
+			初始化     ：执行类构造器  执行static 语句  子类的构造调用前调用父类的构造，线程安全的
+ClssLoader 抽象类，将java字节码装载jvm中，可以定制满足不同的字节码流的获取方式  对应于流程中的加载阶段	
+	loadClass(name)	吧一个class的类型加载
+	defineClass(byte[] b)吧一个class文件装载
+	findClass  loadClass回调改方法，自定义加载器推荐做法
+	findLoad  查找已经被加载的类---先查找  找不到在加载
+	
+	BootStrap ClassLoader （启动ClassLoader）1----rt.jar /-Xbootclasspath
+
+	Extension ClassLoader （扩展ClassLoader）2		%JAVA_HOME%/lib/ext/*.jar
+	
+	App ClassLoader （应用ClassLoader/系统ClassLoader）3Classpath下
+	
+	Custom ClassLoader(自定义ClassLoader)4	完全自定义路径
+	
+	
+	4中加载器的协调工作
+		自底向上查找加载只到 启动加载类也没有 则往下开始加载只到加载成功  对应rt.jar系统主要加载类
+	
+	
+	
+	
+		

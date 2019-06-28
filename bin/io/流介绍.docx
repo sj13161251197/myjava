@@ -1,0 +1,71 @@
+
+
+
+java的IO模型设计非常优秀，它使用Decorator(装饰者)模式，按功能划分Stream，您可以动态装配这些Stream，以便获得您需要的功能。
+
+	根据处理数据类型的不同分为：字符流和字节流
+
+·        根据数据流向不同分为：输入流和输出流
+
+·        按数据来源（去向）分类：
+
+         1、File（文件）： FileInputStream, FileOutputStream, FileReader, FileWriter 
+         2、byte[]：ByteArrayInputStream, ByteArrayOutputStream 
+         3、Char[]: CharArrayReader,CharArrayWriter 
+         4、String:StringBufferInputStream, StringReader, StringWriter 
+         5、网络数据流：InputStream,OutputStream, Reader, Writer 
+         
+         
+         输入流  读取数据源。数据源包括外界(键盘、文件、网络…)，即是将数据源读入到程序的通信通道
+         输出流   写入数据。将程序中的数据输出到外界（显示器、打印机、文件、网络…）的通信通道。
+         
+         
+      流的特性有下面几点：
+      1)先进先出，最先写入输出流的数据最先被输入流读取到。
+      2)顺序存取，可以一个接一个地往流中写入一串字节，读出时也将按写入顺序读取一串字节，不能随机访问中间的数据。（RandomAccessFile可以从文件的任意位置进行存取（输入输出）操作）
+      3)只读或只写，每个流只能是输入流或输出流的一种，不能同时具备两个功能，输入流只能进行读操作，对输出流只能进行写操作。在一个数据传输通道中，如果既要写入数据，又要读取数据，则要分别提供两个流。 
+      
+      
+      
+      
+2.    ByteArrayInputStream、StringBufferInputStream(上图的StreamBufferInputStream)、FileInputStream是三种基本的介质流，它们分别从Byte数组、StringBuffer、和本地文件中读取数据。
+
+3.    PipedInputStream是从与其它线程共用的管道中读取数据.
+
+4.    ObjectInputStream和所有FilterInputStream的子类都是装饰流（装饰器模式的主角）。
+	
+5	  ByteArrayOutputStream、FileOutputStream是两种基本的介质流，它们分别向Byte数组、和本地文件中写入数据。PipedOutputStream是向与其它线程共用的管道中写入数据。
+
+3.    ObjectOutputStream和所有FilterOutputStream的子类都是装饰流。
+
+	  CharReader、StringReader是两种基本的介质流，它们分别将Char数组、String中读取数据。PipedReader是从与其它线程共用的管道中读取数据。
+
+3.    BufferedReader很明显就是一个装饰器，它和其子类负责装饰其它Reader对象。
+
+4.    FilterReader是所有自定义具体装饰流的父类，其子类PushbackReader对Reader对象进行装饰，会增加一个行号。
+
+5.    InputStreamReader是一个连接字节流和字符流的桥梁，它将字节流转变为字符流。FileReader可以说是一个达到此功能、常用的工具类，在其源代码中明显使用了将FileInputStream转变为Reader的方法。我们可以从这个类中得到一定的技巧。Reader中各个类的用途和使用方法基本和InputStream中的类使用一致。后面会有Reader与InputStream的对应关系。
+
+
+  	  CharArrayWriter、StringWriter是两种基本的介质流，它们分别向Char数组、String中写入数据。PipedWriter是向与其它线程共用的管道中写入数据，
+
+3.    BufferedWriter是一个装饰器为Writer提供缓冲功能。
+
+4.    PrintWriter和PrintStream极其类似，功能和使用也非常相似。
+
+5.    OutputStreamWriter是OutputStream到Writer转换的桥梁，它的子类FileWriter其实就是一个实现此功能的具体类（具体可以研究一SourceCode）。功能和使用和OutputStream极其类似.
+
+ 	  
+ 	  LineNumberInputStream主要完成从流中读取数据时，会得到相应的行号，至于什么时候分行、在哪里分行是由改类主动确定的，并不是在原始中有这样一个行号。在输出部分没有对应的部分，我们完全可以自己建立一个LineNumberOutputStream，在最初写入时会有一个基准的行号，以后每次遇到换行时会在下一行添加一个行号，看起来也是可以的。好像更不入流了。
+
+2.    PushbackInputStream的功能是查看最后一个字节，不满意就放入缓冲区。主要用在编译器的语法、词法分析部分。输出部分的BufferedOutputStream几乎实现相近的功能。
+
+3.    StringBufferInputStream已经被Deprecated，本身就不应该出现在InputStream部分，主要因为String应该属于字符流的范围。已经被废弃了，当然输出部分也没有必要需要它了！还允许它存在只是为了保持版本的向下兼容而已。
+
+4.    SequenceInputStream可以认为是一个工具类，将两个或者多个输入流当成一个输入流依次读取。完全可以从IO包中去除，还完全不影响IO包的结构，却让其更“纯洁”――纯洁的Decorator模式。
+
+5.    PrintStream也可以认为是一个辅助工具。主要可以向其他输出流，或者FileInputStream写入数据，本身内部实现还是带缓冲的。本质上是对其它流的综合运用的一个工具而已。一样可以踢出IO包！System.out和System.out就是PrintStream的实例！
+
+
+
+  节流没有缓冲区，是直接输出的，而字符流是输出到缓冲区的。因此在输出时，字节流不调用colse()方法时，信息已经输出了，而字符流只有在调用close()方法关闭缓冲区时，信息才输出。要想字符流在未关闭时输出信息，则需要手动调用flush()方法。

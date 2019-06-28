@@ -1,0 +1,55 @@
+jvm发展
+	VMWare或者Visual Box都是使用软件模拟物理CPU的指令集
+	JVM使用软件模拟Java 字节码的指令集
+
+发展：
+		jdk1.1  awt 反射，内部类，jdbc,rmi:远程消息交换协议JRMP（Java Remote Messaging Protocol）进行通信
+		jdk1.2   swing,collection,JIT  即时编译技术编译器将字节码编译成本机机器代码,Accurate Memory Management 精确内存管理，数据类型敏感
+				GC的改善
+				
+		jdk1.3	hostPost虚拟机  +声音的api
+		jdk1.4  log,ip6,nio,正则，加密
+		jdk1.5	泛型，注解，枚举，装箱，
+		jdk1.6  lambda
+		jdk1.7  g1，动态语言的增强，nio2.0
+		jdk8	lambda,类型注解
+		jdk9	java模块化
+
+java的使用
+	java语言规范：语法，变量，类型，文法
+	jvm规范：Class文件类型类型格式，运行时数据的管理表示与存储（），帧栈，虚拟机的启动，虚拟机的指令集pc,指针
+	
+jvm整数的表达方式
+
+	源码  第一位为符号位0+ 1-    如5:00000101
+	补码：源码的符号位不变   其余取反
+	正数反码：源码
+	负数反码：符号位不动，反码+1  如6:00000110  符号位不变+反码11111001   +1:11111010  这个的表示即-6
+	
+	为什么要补码：0：它不属于正或者负   正0:00000000
+									  负:：10000000 反码+1:00000000
+	补码能够很好的参与计算机的运算
+		整数运算：进行位加运算   就是+法运算符号位也参与运算
+		浮点运算：s	eeeeeeee	mmmmmmmm...
+				符号——8位的指数——尾数23位
+				s*m*2^()
+	反汇编格式：索引 操作码  操作数   注解
+				偏移量：+-*/入栈出栈
+				
+jvm常见指令：
+		反编译器：javap:格式<index> <opcode> [ <operand1> [ <operand2>... ]] [<comment>]
+		
+		类型转化：l2i  
+		出栈入栈操作：aload  astore
+		运算：iadd  isub
+		流程控制：ifeq ifne
+		函数调用：invokevirtual invokeinterface  invokespecial  invokestatic 
+jvm对java特殊支持
+		反射 java.lang.reflect
+		ClassLoader
+		初始化class和interface
+		安全相关 java.security
+		多线程
+		弱引用
+		
+		

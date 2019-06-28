@@ -1,0 +1,466 @@
+一、概述
+
+     java为了引入函数式编程的特性在java8中引入了一个全新的概念“lambda表达式”，同时为了使“lambda表达式”与现有的类库无缝结合，引入了default关键字，允许在接口中定义default的默认实现方法，同时允许在接口中定义static静态实现方法，这两者在java7中是不允许的。lambda表达式从语法层面看极大的简化了匿名内部类的使用，将匿名内部类声明过程中冗余的代码都消灭了，从编译器和代码底层执行层面看，lambda表式有利于编译器优化，充分利用多核CPU的特性进行并行处理。允许在接口中定义default方法和static方法使得接口扩展变得更加轻松。另外Java8通过Lambda表达式提供了对类似于JavaScript中的Function对象和闭包的直接支持。
+
+二、default方法与static方法
+
+     在接口中定义default方法使得接口具备抽象类的“功能”，即为子类的实现提供默认的方法实现，子类可以像调用自身的方法一样调用这些默认的实现方法，但两者的动机与语义是完全不同的。前者的动机在于扩展已有接口，使得已有接口在不增加新的抽象方法的前提下增加新的实现方法，而后者则主要是为了简化子类的实现，将子类中的公共方法实现或者某些相对不怎么重要的方法的空实现集中起来放在抽象类中，由子类继承自抽象类，子类覆盖符合子类特性的方法。
+
+2.1 default方法与static方法的相互调用
+
+
+interface A{
+	//接口中可以定义变量，默认是public static final，必须初始化，可以加final，static，public修饰
+	final int i=1;
+	void test();
+	default void printA(){
+		System.out.println("A"+i);
+	}
+   default void printC(){
+	   System.out.println("C");
+	   //默认方法中可以访问静态方法或者默认方法
+	   printB();
+	   printA();
+   }
+   //default，static，abstract三个关键字中不能同时有两个关键字修饰一个方法
+//   default static void printD(){
+//	   System.out.println("C");
+//   }
+
+	static void printB(){
+		//static方法中不能访问default方法，只能访问静态方法
+//		printC()
+		System.out.println("静态方法A");
+	}
+	static void printD(){
+	    printB();
+	}
+}
+    由以上代码可知，接口中static方法只能访问static方法，不能访问default方法，而default方法可以访问static方法和default方法，调用方式跟普通类中调用方法一样。另外一个方法只能被static、default、abstract关键字修饰，因为从语义上讲，static方法就是一种静态的default方法，是一种已经实现的方法，与abstract定义的抽象方法冲突。
+2.2 接口继承下static方法与default方法的继承与覆写
+
+
+interface E extends A{
+	@Override
+	default void printA(){
+	//printC()执行时会调用E中的printA方法，形成死循环
+//	   printC();
+	   A.super.printA();
+	   System.out.println("接口间默认方法的继承");
+	}
+	//不允许覆写static方法
+//	@Override
+//	static void printC(){
+//		System.out.println("覆写静态方法C");
+//	}
+}
+    由以上代码可知，子接口可以覆写父接口中的default方法，不能覆写父类中的static方法，子接口中可以像子类调用父类中的方法一样调用父接口中的default方法和static方法，通过A.super.printA()方法显示调用父类中的同名方法。
+2.3 实现类同时继承了子接口和父接口
+
+
+class D2 implements A,E{
+
+	@Override
+	public void test() {
+        System.out.println("D2");		
+	}
+	
+}
+public static void main(String[] args) {
+	   D2 d2=new D2();
+	   d2.printA();
+	   d2.printC();
+	}
+A1
+接口间默认方法的继承
+C
+静态方法A
+A1
+接口间默认方法的继承
+
+   从执行结果看，实现类调用了子接口而不是父接口中的printA()方法，即当实现类继承的多个接口中存在同名的default方法时采用“最具体实现原则”，子类中的同名方法默认比父类中的方法更具体。另外值得注意的是，printC在执行的过程中父类的printA方法被自动替换为子类的printA方法。
+2.4 实现类继承了两个接口，其中一个接口的抽象方法是另一个接口的default方法
+
+
+interface C{
+	void printA();
+}
+
+class F implements A,C{
+
+	@Override
+	public void printA() {
+         System.out.println("默认方法不太代替接口实现");		
+	}
+
+	@Override
+	public void test() {
+		System.out.println("test");
+	}
+	
+}
+
+   首先同一接口中抽象方法、default方法、static方法不能同名，由上述代码可知，同一实现类继承自两个不同的接口时，假如其中一个接口的抽象方法与另一个接口的default方法相同时，在实现类中default方法不能代替抽象方法的具体实现，具体而言printA()方法必须被实现，实现printA()方法的同时继承自A的default方法就被覆写了。
+2.5、实现类继承两个独立的接口，两个接口具有相同的default方法
+
+
+interface B{
+	void test();
+	default void printA(){
+		System.out.println("同名方法B");
+	}
+	static void printB(){
+		System.out.println("静态方法B");
+	}
+}
+
+public class DefaultTest implements A,B{
+
+	@Override
+	public void test() {
+	   A.super.printA();
+       System.out.println("test");		
+	}
+	@Override
+	public void printA(){
+		//子类调用接口中的非静态方法
+		A.super.printA();
+	}
+//	@Override,接口中同名的静态方法不存在冲突，子类也不能覆写
+	static void printB(){
+		//通过接口名直接调用接口中静态方法
+		A.printB();
+		B.printB();
+	}
+}
+      当实现类继承的多个独立的接口中具有相同的default方法时，由于编译器不知道实现类具体将要调用哪种方法会报编译错误，必须覆写同名的default方法，可以通过A.super.printA()指定具体调用哪个接口的默认方法，也可以完全抛开这些default方法另外实现。值得注意的是实现类可以有同名的static方法，但是不能加@Override注解，原因也好理解，静态方法从语义上讲与类的实例无关，子类覆写父类中的静态方法没有实际意义，实际调用时直接通过类名调用该类下的静态方法，不同于普通方法会存在多态问题。
+三、lambda表达式
+
+3.1 匿名内部类与函数式接口
+
+
+public void test2(){
+	   Runnable run1=new Runnable() {
+		@Override
+		public void run() {
+            System.out.println("匿名内部类");
+		}
+	};
+	  Runnable run2=()->{
+		  System.out.println("lambda表达式");
+	  };
+	  run1.run();
+	  run2.run();
+	}
+    run2的表述方式就是传说中的“lambda”表达式，从代码上可以明显看到采用lambda表达式把接口和抽象方法的声明都省略了，具体编译时编译器会根据lambda表达式返回的类型（如Runnable）推断lambda表达式实际对应的接口类型和方法。那么所有的匿名内部类都可以改写成lambda表达式么？可以从编译器编译的角度推断这个问题的答案，我们这里举的Runnable接口只有一个方法，那么加入有两个或两个以上的方法时，编译器怎么判断你实际对应的是哪一个接口方法呢？答案是编译器无法判断，因此只有类似于Runnable这样只有一个方法的接口的匿名内部类可以被改写成lambda表达式，如果接口中含有Object对象中的方法的抽象方法时除外，因为Object是所有对象的根对象，包括lambda表达式所返回的对象，因此java8规定接口中含有的Object对象的方法的抽象方法时该抽象方法忽略不计。类似于Runnable这样的接口就被称为函数式接口，一个接口是否是函数式接口可以通过@FunctionalInterface注解判断，若不符合条件编译器会报错，不加该注解也可将该接口用于lambda表达式，编译器编译时会自动判断该接口是否符合条件，不符合条件会直接报错。另外函数式接口也是接口，同样允许有default方法和static方法，函数式接口主要关注是否只有一个非Object的方法的抽象方法的抽象方法。最后lambda表达式所返回的对象可以理解为针对某个接口的匿名内部类的实例对象，可以像使用普通对象一样调用其实现的接口方法。如下所示：
+
+@FunctionalInterface
+public interface LmdInterface {
+	void run();
+	//以下两个方法都是Object对象中的方法的抽象方法
+	String toString();
+	boolean equals(Object object);
+        default void say(){
+        System.out.println("hello");
+    }
+ }
+3.2 lambda表达式的语法
+完整的lambda表达式的语法为：    
+
+(Type1 param1, Type2 param2, ..., TypeN paramN) -> {
+  statment1;
+  statment2;
+  //.............
+  return statmentM;
+}
+其中Type为参数类型，在指定具体返回类型时可以省略参数类型，由编译器根据返回类型对应的接口类型去推断，如果类型错误会报异常。大括号中的方法体跟普通的方法体完全一样，可以有返回值，也可以没有返回值。没有参数时直接写一对空的小括号，有返回值且计算返回值的表达式较简单时可以省略大括号和return语句。具体如下：
+
+
+public void test3(){
+		Comparator<Integer> com=(Integer x,Integer y)->{
+			return x-y;
+		};
+		Comparator<Integer> com2=(x,y)->{
+			return x-y;
+		};
+		Comparator<Integer> com3=(x,y)->x-y;
+        //以下为java.util.function包中预定义的一些函数接口
+		Supplier<Integer> obj=()->5;
+		ToIntFunction<Integer> obj2=x->x*2;
+		System.out.println(com.compare(1, 2));
+		System.out.println(com2.compare(1, 2));
+		System.out.println(com3.compare(1, 2));
+		int i=obj.get();
+		int j=obj2.applyAsInt(5);
+		System.out.println(i+":"+j);
+	}
+除此之外还有一些比较晦涩点的语法，可以用lambda表达式来表示对方法的调用，称为方法引用，方法引用包括静态方法引用，实例方法引用，父类方法引用，构造方法引用和数组构造方法引用，具体如下：
+<span style="font-size:18px;">public void test4(){
+		//静态方法引用
+		Comparator<Integer> com=(x,y)->Integer.compare(x, y);
+		Comparator<Integer> com2=Integer::compare;
+		List<Person> persons=Arrays.asList(new Person(),new Person(),new Person());
+		//forEach方法接受一个lambda表达式作为参数，对于list集合中每个元素都调用该表达式
+		//实例方法引用
+		persons.forEach(person->person.getFood());
+		persons.forEach(Person::getFood);
+		//父类方法引用
+		persons.forEach(person->person.eat());
+		persons.forEach(Human::eat);
+        List<Integer> ages=Arrays.asList(1,2,3,4,5);
+        //构造方法引用
+        ages.forEach(x->new Integer(x));
+        ages.forEach(Integer::new);
+        //数组构造方法引用
+        IntFunction<Integer[]> a=x->new Integer[x];
+        IntFunction<Integer[]> a2=Integer[]::new;
+        a.apply(10);
+        a2.apply(10);
+	}</span>
+3.3 跟外部方法中的局部变量及外部类成员变量的交互
+
+    示例代码如下：
+
+private int a=1;
+	private static int b=2; 
+	private int d=2;
+	public void test5(int c){
+	  int c2=1;
+	  final int c3=1;
+      IntFunction<Integer> f=x->x+a;
+      IntFunction<Integer> f2=x->x+b;
+      IntFunction<Integer> f3=x->{
+    	 //lambda表达式中不能修改其引用的外部方法的局部变量，一旦被lambda表达式引用，该变量在整个方法体中
+    	  //同样不能被修改，否则报错
+    	  b++;
+//    	  c2++;
+//    	  c++;
+    	  int d=2;
+    	  //不能其被定义的外部方法中的局部变量相同的变量，但可以与类中成员变量同名
+//    	  int c2=3;
+//    	  int c=2;
+    	  return b+x+c2;
+      };
+      IntFunction<Integer> f4=x->{
+    	  a++;
+    	  return a+x;
+      };
+//      c2=3;
+	}
+      从上述代码中可以看出在lambda表达式中可以访问类成员变量，可以在lambda表达式的方法体中定义与类成员变量同名的变量，可以修改该类成员变量。但是在lambda表达式中访问其外部方法的局部变量时要求其必须是“effectively final”，与内部类访问其外部方法的局部变量要求其必须是final不同。“effectively final”要求lambda表达式所引用的外部方法变量不能在lambda表达式之外被修改，也不能在lambda表达式内部被修改，也不能在lambda表达式中定义与外部方法变量同名的变量名。
+     与内部类相比，lambda表达式还有一个重要的区别，lambda表达式内部没有其外部类的引用，可以直接引用外部类中的变量或者方法，而内部类需要通过外部类类名.this返回外部类实例引用调用。在lambda表达式内部，this指代的就是外部类，而内部类中this指代的内部类本身。代码示例如下：
+
+
+public void test6(){
+		Runnable run=()->{
+			System.out.println(this);
+		};
+		Runnable run2=()->{
+			System.out.println(toString()+getName());
+		};
+		run.run();
+		run2.run();
+	}
+	@Override
+	public String toString() {
+		return "helloworld";
+	}
+	private String getName(){
+		return "shl";
+	}
+helloworld
+helloworldshl
+
+四、集合迭代与流处理——Stream API
+
+4.1 Stream概述
+
+      Stream API指的是java8 中java.util.stream包中的API，Stream API是Lambda表达式的具体应用，也是java8引入Lambada表达式的目的所在。这里的Stream跟IO流中的Stream或者StAX处理XML的stream完全是两个不同的概念，IO流中的Stream可以理解为字节序列或者字符序列，StAX中的Stream可以理解为XML文档元素的序列，而这里的Stream指的是一组元素的序列，这一组元素可以来源于数组，集合或者是IO channel。我们重点讨论和关注来自集合或者数组的Stream API。
+
+     Stream API是原先集合Iterator的高级版本，也可以理解为一种针对于“iterator”的高级“语法糖”，即编译器在编译的过程中会帮我们把Stream API中的Lambda表达式语法转化成为熟悉的Iterator语法，从而使得我们编写类似的代码更加简洁，更加直观，清晰易懂。Stream API不止如此，除了提供常规的串行式集合迭代与处理外，也提供了并行式的集合迭代与处理。就一组元素而言，串行式处理就是在一个线程内将元素从头到尾依次迭代处理，并行式处理是指将一组元素分割成多个数据段，每个数据段单独启用一个线程，各线程彼此独立同时运行，从而充分利用现代处理器多核多线程的特点，提高系统性能。正常情况下由我们自己实现这种功能时比较麻烦容易出错，使用Stream API就可以很轻松的搞定这问题。
+
+4.2 Stream语法
+
+     
+
+        从上图可以看出，Stream的语法基本分为如下三步：
+
+     1.从数据源中构造流Stream对象
+
+     2.对构造的流对象进行各种转换操作，产生新的流，原有的流不改变
+
+     3.对产生的目标流执行聚合等终止流的操作
+
+4.4 Stream构造
+
+     以下示例代码是比较常见的几种构造方法。需要注意的是以上构造方法返回的都是串行式迭代处理的stream，集合类对象除了stream()方法外还有parallelStream()方法，该方法返回一个并行式迭代处理的Stream对象。
+
+public static void test2(){
+		Stream<Integer> stream=Stream.of(1,2,3,4,5);
+		stream.forEach((s)->{System.out.println(s);});
+
+		//注意必须添加limit()方法限制产生的元素的个数，否则会产生无穷序列
+		Stream<Integer> stream2=Stream.generate(()->{
+			return new Random().nextInt(5);
+		}).limit(5);
+		stream2.forEach((s)->{System.out.println(s);});
+		
+		//iterate方法中，第一个参数是种子，即最终产生的序列中的第一个元素，第二个元素是由后面的
+		//Lambda表达式计算而来的，这里是由前一个元素加1产生后一个元素
+		Stream<Integer> stream3=Stream.iterate(1,item->item+1).limit(5);
+		stream3.forEach((s)->{System.out.println(s);});
+		
+		int[] a=new int[]{1,2,3,4,5};
+		//IntStream是Stream针对int或者Interger元素类型的特定Stream类型，跟Stream处在相同
+		//的类级别位置，都是BaseStream的子类。同样的还有LongStream和DoubleStream。
+		IntStream stream4=Arrays.stream(a);
+		stream4.forEach((s)->{System.out.println(s);});
+		
+		IntStream stream5=IntStream.range(1, 5);
+		stream5.forEach((s)->{System.out.println(s);});
+		
+		List<Integer> b=Arrays.asList(1,2,3,4,5);
+		Stream<Integer> stream6=b.stream();
+		stream6.forEach((s)->{System.out.println(s);});
+		
+		try {
+			BufferedReader reader=new BufferedReader(new FileReader(new File("test.txt")));
+		    //返回的序列中Stream代表文本中一行字符串
+			Stream<String> stream7=reader.lines();
+		    stream7.forEach(s->System.out.println(s));
+		} catch (FileNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+	}
+4.5 Stream操作
+
+          Stream操作分为两类：
+
+Intermediate：一个流可以后面跟随零个或多个 intermediate 操作。其目的主要是打开流，做出某种程度的数据映射/过滤，然后返回一个新的流，交给下一个操作使用。这类操作都是惰性化的（lazy），就是说，仅仅调用到这类方法，并没有真正开始流的遍历。
+Terminal：一个流只能有一个 terminal 操作，当这个操作执行后，流就被使用“光”了，无法再被操作。所以这必定是流的最后一个操作。Terminal 操作的执行，才会真正开始流的遍历，并且会生成一个结果，或者一个 side effect。注意由Intermediate操作返回的新的流被关闭了，实际未发生改变的原始流同样被关闭了，无法再被操作。
+         需要注意的是对流执行的多个操作的过程中，流中的元素只遍历一遍，可以将流的各种操作理解一种筛子，每个元素会按照Stream中的序列依次通过各个筛子，如果某元素被某个筛子过滤掉了，那么该元素就不会执行该筛子后面的筛子操作了。
+
+4.5.1 Intermediate操作，该类操作的关键特点是返回一个新的流
+
+
+public static void test3(){
+		Stream<Integer> stream=Stream.of(1,2,2,3,3,3,4,7,8,11,5,6,10);
+		//去除重复
+		stream.distinct().forEach(s->System.out.print(s));
+	    
+		//过滤
+		Stream<Integer> stream2=Stream.of(1,2,2,3,3,3,4,7,8,11,5,6,10);
+        stream2.filter(s->s>4).forEach(s->System.out.print(s));
+        
+        //映射,三个重载的方法mapToInt,mapToDouble,mapToLong
+        Stream<Integer> stream3=Stream.of(1,2,2,3,3,3,4,7,8,11,5,6,10);
+        stream3.map(s->s*2).forEach(System.out::print);
+        
+        //映射，与map不同的是flatMap返回的是流对象，即将原始流中的元素转换为流对象
+        Integer[][] a=new Integer[][]{{1,2,3},{4,5,6},{7,8,9}};
+        Stream<Integer[]> stream4=Arrays.stream(a);
+        stream4.flatMap(s->Stream.of(s)).forEach(System.out::print);
+        
+        //peek方法等价于forEach方法，不过设计该方法的初衷是将该方法用于调试打印流中的元素
+        Stream<Integer> stream5=Stream.of(1,2,2,3,3,3,4,7,8,11,5,6,10);
+        stream5.peek(System.out::print).forEach(System.out::print);
+	
+	    //skip方法用于抛弃流中指定个数的元素，返回一个新的流，如果流中的元素个数小于指定个数则返回空的流，该方法对于操作序列化的流
+        //来说是廉价的操作，对于并行处理的流则是代价较高的操作
+        Stream<Integer> stream6=Stream.of(1,2,2,3,3,3,4,7,8,11,5,6,10);
+        stream6.skip(5).forEach(System.out::print);
+        
+        //distinct方法用于去除重复的元素
+        Stream<Integer> stream7=Stream.of(1,2,2,3,3,3,4,7,8,11,5,6,10);
+        stream7.distinct().forEach(System.out::print);
+        
+        Consumer<Integer> print=System.out::print;
+        //sorted方法返回一个按照自然顺序排序的流,与之相反的是unordered方法
+        Stream<Integer> stream8=Stream.of(1,2,2,3,3,3,4,7,8,11,5,6,10);
+        stream8.sorted().forEach(print);
+        
+	} 
+4.5.2 Terminal操作，该类操作的关键特点是操作执行完后，原始流和经过Intermediate操作产生的新的流都会被关闭
+
+
+public static void test4(){
+		Stream<Integer> stream=Stream.of(1,2,2,3,3,3,4,7,8,11,5,6,10);
+		
+		//toArray方法返回一个Object数组，注意不能强转
+		Object[] result =stream.toArray();
+		
+		//判断流中所有的元素是否都满足某个条件，类似的有anyMatch、noneMatch方法
+		Stream<Integer> stream2=Stream.of(1,2,2,3,3,3,4,7,8,11,5,6,10);
+		boolean match=stream2.allMatch(s->s>5);
+		
+		//从流中选取任意的一个元素到Optional容器中，get方法用于迭代容器中的元素，ispresent判断该元素是否为空
+		//ifpresent方法表示当容器元素非空时应用某个Consumer,注意多次操作同一个数据源结果可能不一样
+		//如果想要一个确定的结果用findFirst方法
+		Stream<Integer> stream3=Stream.of(1,2,2,3,3,3,4,7,8,11,5,6,10);
+		Optional<Integer> optional=stream3.findAny();
+	    System.out.println(optional.get());
+	    
+	    //iterator方法返回一个迭代器对象
+	    Stream<Integer> stream4=Stream.of(1,2,2,3,3,3,4,7,8,11,5,6,10);
+	    Iterator<Integer> iterator=stream4.iterator();
+	    while(iterator.hasNext()){
+	    	System.out.println(iterator.next());
+	    }
+	    
+	    //min取出流中最小的元素,用Optional容器包装，相反的是max方法
+	    Stream<Integer> stream5=Stream.of(1,2,2,3,3,3,4,7,8,11,5,6,10);
+	    Optional<Integer> min=stream5.min((s,s1)->s-s1);
+
+	    //count方法返回元素总个数
+	    Stream<Integer> stream6=Stream.of(1,2,2,3,3,3,4,7,8,11,5,6,10);
+	    System.out.println(stream6.count());
+	    
+	    //collect方法，主要利用Collectors对象中的静态方法，这些静态方法能够实现常用的分组，求和，求平均值等统计分析功能
+	    //将流中的元素转换为list列表，类似的有toMap，toSet,toCollection方法
+	    Stream<Integer> stream7=Stream.of(1,2,2,3,3,3,4,7,8,11,5,6,10);
+	    List<Integer> list=stream7.collect(Collectors.toList());
+	    list.forEach(System.out::print);
+	    
+	    //转换为map时注意去除重复元素，避免key值重复
+	    Stream<Integer> stream8=Stream.of(1,2,2,3,3,3,4,7,8,11,5,6,10);
+	    Map<Integer, Integer> map=stream8.distinct().collect(Collectors.toMap(s->s, s->s*s));
+	    map.forEach((a,b)->System.out.println(a+":"+b));
+
+	    //将流中的元素用自定的字符连接起来，重载方法可以加前缀后缀
+	    Stream<Integer> stream9=Stream.of(1,2,2,3,3,3,4,7,8,11,5,6,10);
+	    String num=stream9.filter(s->s>5).map(s->s.toString()).collect(Collectors.joining(", "));
+	   System.out.println(num);
+	    
+	   //求总和
+	    Stream<Integer> stream10=Stream.of(1,2,2,3,3,3,4,7,8,11,5,6,10);
+	    int sum=stream10.collect(Collectors.summingInt(s->s));
+	    System.out.println(sum);
+	    
+	    //求平均值，返回的Double对象
+	    Stream<Integer> stream11=Stream.of(1,2,2,3,3,3,4,7,8,11,5,6,10);
+	    int average=stream11.collect(Collectors.averagingInt(s->s)).intValue();
+	    System.out.println(average);
+	    
+	    //reduce方法，其中0相当于计算的初始值，若stream为空则直接返回0，后面的lambda表达式是执行实际计算的规则，具体而言以起始值和流中的第一个元素
+	    //为参数调用后面的规则，将返回值作为第一个参数，和流中的第二个元素一起作为参数继续调用规则，直到流中的元素没有，返回最后一次调用规则的返回值。
+	    Stream<Integer> stream13=Stream.of(1,2,2,3,3,3,4,7,8,11,5,6,10);
+	    int sum2=stream13.reduce(0, (sum3,item)->sum3+item);
+	    System.out.println(sum2);
+	    
+	 // 字符串连接，concat = "ABCD"
+	    String concat = Stream.of("A", "B", "C", "D").reduce("", String::concat); 
+	 // 求最小值，minValue = -3.0
+	    double minValue = Stream.of(-1.5, 1.0, -3.0, -2.0).reduce(Double.MAX_VALUE, Double::min); 
+	}
+4.6 补充
+
+      Lambda表达式及其相关的static和default关键字用法可以说已经渗透到Java的方方面面了，Sun也因此对JDK做了相当大程度的调整，以最大程度发挥Lambda表达式的优势，其他零零散散的应用基本都大同小异，理解Lambda表达式跟内部类直接的区别联系是掌握Lambda表达式的重点。
+
+     以上总结参考了不少前辈分享的文章，就不一一列举了，一并表示感谢！！！
+--------------------- 
+作者：孙大圣666 
+来源：CSDN 
+原文：https://blog.csdn.net/qq_31865983/article/details/51296632 
+版权声明：本文为博主原创文章，转载请附上博文链接！

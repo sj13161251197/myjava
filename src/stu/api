@@ -1,0 +1,10 @@
+1.先完成主页面MainUI（代码如下）
+	用户名和密码如下： 
+	用户名和密码
+	
+2.完成学生界面StuUI，这个页面在MainUI界面设置了按钮连接（代码如下）
+3.完成教师界面TerUI，这个和学生页面一样，在MainUI页面有设置按钮事件，连接到MainUI页面.(代码如下)
+4.完成学生界面的课程表界面KeChengBiaoUI （代码如下）
+5.完成学生的成绩查询界面ChengJiBiaoUI（代码如下） 
+6.完成教师的课程管理界面KeChengGuanLiUI （代码如下）
+7.完成教师页面的学生名单页面XueShengMingDanUI （代码如下）

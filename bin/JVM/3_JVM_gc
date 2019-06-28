@@ -1,0 +1,34 @@
+Trace跟踪参数
+	-verbose:gc     打开gc
+	-XX:+printGC	打印gc 的log开关
+			前		回收后		时间
+		[GC 4790K->374K(15872K), 0.0001606 secs]
+	
+	-XX:+PrintGCDetails打印GC详细信息
+	-XX:+PrintGCTimeStamps打印CG发生的时间戳
+	-Xloggc:log/gc.log   指定gc的输出位置  默认为控制台这里指  当前目录/log/gc.log
+	-XX:+PrintHeapAtGC  每次一次GC后，都打印堆信息
+	-XX:+TraceClassLoading   类加载log
+	-XX:+PrintClassHistogram 类的使用情况  默认不显示
+	-Xmx –Xms  指定最大堆和最小堆
+			-Xmx 和 –Xms 应该保持一个什么关系，可以让系统的性能尽可能的好呢？
+			Java的桌面产品，需要绑定JRE，但是JRE又很大，你如何做一下JRE的瘦身呢？
+	
+3.一个对象的这一辈子
+
+	我是一个普通的Java对象，我出生在Eden区，
+	在Eden区我还看到和我长的很像的小兄弟，我们在Eden区中玩了挺长时间。
+	有一天Eden区中的人实在是太多了，我就被迫去了Survivor区的“From”区，自从去了Survivor区，我就开始漂了，有时候在Survivor的“From”区，有时候在Survivor的“To”区，居无定所。
+	直到我18岁的时候，爸爸说我成人了，该去社会上闯闯了。
+	于是我就去了年老代那边，年老代里，人很多，并且年龄都挺大的，
+	我在这里也认识了很多人。在年老代里，我生活了20年(每次GC加一岁)，然后被回收。
+	
+	我的理解：出生在新生代Eden 岁月一轮GC一遍。新生代 全部到年轻代（to） from区按标准达标的到老年代，没达标的到to区   然后新生代交换to和from2个区，而老年代的达标则回收
+	年轻代的垃圾回收算法使用的是复制算法（就是to和from每次gc  都处理在交换）
+	
+		-XX:+HeapDumpOnOutOfMemoryError    OOM时导出堆到文件
+		-XX:+HeapDumpPath    导出OOM的路径
+		
+		
+	官方推荐：新生代1/8 幸存代to占新生代的1/10
+		
